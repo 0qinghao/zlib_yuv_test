@@ -7,12 +7,9 @@
 #include <sstream>
 #include <iomanip>
 #include <cmath>
-
-#ifdef _WIN32
-#include <windows.h>
-#else
 #include <sys/stat.h>
-#endif
+#include <algorithm> // 添加 max 函数支持
+#include <cctype>    // 添加 tolower 支持
 
 // 压缩YUV420P数据
 double compressYUV420P(const std::vector<uint8_t>& input, std::vector<uint8_t>& output, int level) {
@@ -65,34 +62,19 @@ bool parseFrameRange(const std::string& range, size_t maxFrames,
     return true;
 }
 
-// 跨平台文件大小获取
+// 获取文件大小
 uint64_t getFileSize(const std::string& filename) {
-#ifdef _WIN32
-    WIN32_FILE_ATTRIBUTE_DATA fad;
-    if (!GetFileAttributesExA(filename.c_str(), GetFileExInfoStandard, &fad)) {
-        return 0;
-    }
-    LARGE_INTEGER size;
-    size.HighPart = fad.nFileSizeHigh;
-    size.LowPart = fad.nFileSizeLow;
-    return size.QuadPart;
-#else
     struct stat stat_buf;
     if (stat(filename.c_str(), &stat_buf) != 0) {
         return 0;
     }
     return static_cast<uint64_t>(stat_buf.st_size);
-#endif
 }
 
-// 跨平台文件存在检查
+// 文件存在检查
 bool fileExists(const std::string& filename) {
-#ifdef _WIN32
-    return GetFileAttributesA(filename.c_str()) != INVALID_FILE_ATTRIBUTES;
-#else
     std::ifstream f(filename.c_str());
     return f.good();
-#endif
 }
 
 int main(int argc, char* argv[]) {
@@ -127,7 +109,7 @@ int main(int argc, char* argv[]) {
         frameRange = argv[4];
     }
     if (argc > 5) {
-        testRuns = max(1, std::stoi(argv[5]));
+        testRuns = std::max(1, std::stoi(argv[5]));
     }
 
     // 检查文件是否存在
